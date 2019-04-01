@@ -1,0 +1,125 @@
+#include "stdio.h"
+#include "stdlib.h"
+#include "stdbool.h"
+#include "string.h"
+#include "unistd.h"
+#include "fcntl.h"
+#include "sys/types.h"
+#include "sys/wait.h"
+#include "dirent.h"
+
+#define CMD_MAX 200
+#define TRUE_STRCMP 10
+#define BUFSZ 10000
+
+void CMD_PROCESS(char*CMD);
+void shell_exit();
+void shell_ls(int argc, char*argv[]);
+void shell_pwd();
+int shell_cd(int argc, char*argv[]);
+void shell_mkdir(int argc,char  *argv[]);
+int main(){
+	char CMD[CMD_MAX];
+	while(1){
+		printf("[myminishell @%s]$",get_current_dir_name());
+		fgets(CMD,CMD_MAX,stdin);
+		CMD_PROCESS(CMD);
+	}
+}
+
+void CMD_PROCESS(char* CMD){
+
+	char de_token[]=" \n\r\t";
+	char *tokens[100];
+	char *token;
+	int token_index=0;
+	
+	token =strtok(CMD,de_token);
+	while(token!=NULL && token_index< sizeof(tokens)/sizeof(char*)){
+		tokens[token_index]=token;
+		token_index++;
+		token=strtok(NULL,de_token);
+	}
+	tokens[token_index]=NULL;
+	
+	if(strcmp(tokens[0],"exit")==0){
+          shell_exit();
+	}
+	else if(strcmp(tokens[0],"cd")==0){
+		shell_cd(token_index,tokens);
+	}
+	else if (strcmp(tokens[0],"pwd")==0){
+		shell_pwd();
+	}
+	else if(strcmp(tokens[0],"ls")==0){
+		shell_ls(token_index,tokens);
+	}
+	else if(strcmp(tokens[0],"mkdir")==0){
+		shell_mkdir(token_index, tokens);
+	}
+	else{
+		printf("not exit cmd\n");
+	}
+
+	if(token_index==0){
+		printf("not exist cmd\n");
+		shell_exit();
+	}
+
+}
+int shell_cd(int argc,char*argv[]){
+	if(argc==1){
+		chdir(getenv("HOME"));
+		printf("cd -- not exitst dir name\n");
+	}
+	else if (argc==2){
+		if(chdir(argv[1]))
+			printf("no directory\n");
+	
+	else 
+		printf("useage:cd [dir]\n");
+	}
+	return 1;
+}
+void shell_pwd(){
+
+	char dir_name[BUFSZ];
+	getcwd(dir_name,BUFSZ);
+	printf("%s\n",dir_name);
+}
+
+
+void shell_exit(){
+	printf("my shell exit\n");
+	exit(1);
+}
+
+void shell_ls(int argc,char*argv[]){
+	struct stat sb;
+	DIR *dp;
+	struct dirent *d_entry;
+	
+	if((dp=opendir("."))==NULL){
+		printf("CANNOT OPEN DIR");
+	}
+
+
+		while((d_entry=readdir(dp)) != NULL){
+			if(argc==1){
+				if(d_entry->d_name[0]==',')continue;
+			}
+			printf("%s\n",d_entry->d_name);
+		}
+	
+	printf("\n");
+	closedir(dp) ;
+}
+
+void shell_mkdir(int argc,char*argv[]){
+	if(argc==2){//all user permisiion
+	mkdir(argv[1],0777);
+	}
+	else if(argc==3){//permisiion change
+	printf("not asd");
+	}
+}
